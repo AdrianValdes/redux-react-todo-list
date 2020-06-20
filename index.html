@@ -137,6 +137,16 @@
         };
       }
 
+      function handleInitialData() {
+        return (dispatch) => {
+          // Using Promise.all because we are using to asynchronous requests
+          Promise.all([API.fetchTodos(), API.fetchGoals()]).then(
+            ([todos, goals]) => {
+              dispatch(receiveDataAction(todos, goals));
+            }
+          );
+        };
+      }
       /*********************MIDDLEWARES***************/
       // Using Redux Middleware with the Currying technique
       function checker(store) {
@@ -325,12 +335,7 @@
           const { store } = this.props;
 
           //Fetching the data from the database.
-          // Using Promis.all because we are using to asynchronous requests
-          Promise.all([API.fetchTodos(), API.fetchGoals()]).then(
-            ([todos, goals]) => {
-              store.dispatch(receiveDataAction(todos, goals));
-            }
-          );
+          store.dispatch(handleInitialData());
 
           //Calling forceUpdate to cause a re-render even though is an antipattern.
           //Typically one call setState to cause a re-render, but
