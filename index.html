@@ -65,7 +65,7 @@
 
       //this function handels the received data,
       //It makes it easier so one doesn't have to loop through each action
-      //The first time the data comes
+      //the first time the data comes.
       function receiveDataAction(todos, goals) {
         return {
           type: RECEIVE_DATA,
@@ -184,12 +184,15 @@
         addItem = (e) => {
           e.preventDefault();
 
-          const name = this.input.value;
-          this.input.value = '';
-
-          this.props.store.dispatch(
-            addTodoAction({ id: generateId(), name, complete: false })
-          );
+          //Saving the data in the "database". Redux fetch the data from the database and load
+          // that data into the Redux.store. Then, as the user interact with the app we simultaneously
+          // update the Redux-store and persist the changes in the database.
+          return API.saveTodo(this.input.value)
+            .then((todo) => {
+              this.props.store.dispatch(addTodoAction(todo));
+              this.input.value = '';
+            })
+            .catch(() => alert('There was an error, try again'));
         };
 
         removeItem = (todo) => {
@@ -233,10 +236,10 @@
         addItem = (e) => {
           e.preventDefault();
 
-          const name = this.input.value;
-          this.input.value = '';
-
-          this.props.store.dispatch(addGoalAction({ id: generateId(), name }));
+          return API.saveGoal(this.input.value).then((goal) => {
+            this.props.store.dispatch(addGoalAction(goal));
+            this.input.value = '';
+          });
         };
 
         removeItem = (goal) => {
@@ -268,6 +271,8 @@
         componentDidMount() {
           const { store } = this.props;
 
+          //Fetching the data from the database.
+          // Using Promis.all because we are using to asynchronous requests
           Promise.all([API.fetchTodos(), API.fetchGoals()]).then(
             ([todos, goals]) => {
               store.dispatch(receiveDataAction(todos, goals));
