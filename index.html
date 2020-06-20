@@ -111,6 +111,32 @@
             .catch(() => alert('There was an error. Try again.'));
         };
       }
+
+      function handleAddTodo(name, callback) {
+        return (dispatch) => {
+          //Saving the data in the "database". Redux fetch the data from the database and load
+          // that data into the Redux.store. Then, as the user interact with the app we simultaneously
+          // update the Redux-store and persist the changes in the database.
+          return API.saveTodo(name)
+            .then((todo) => {
+              dispatch(addTodoAction(todo));
+              callback();
+            })
+            .catch(() => alert('There was an error, try again'));
+        };
+      }
+
+      function handleToggle(id) {
+        return (dispatch) => {
+          dispatch(toggleTodoAction(id));
+          //Toggling the item from the data base API optimistically
+          return API.saveTodoToggle(id).catch(() => {
+            dispatch(toggleTodoAction(id));
+            alert('An error ocurred, try again');
+          });
+        };
+      }
+
       /*********************MIDDLEWARES***************/
       // Using Redux Middleware with the Currying technique
       function checker(store) {
@@ -233,16 +259,9 @@
       class Todos extends React.Component {
         addItem = (e) => {
           e.preventDefault();
-
-          //Saving the data in the "database". Redux fetch the data from the database and load
-          // that data into the Redux.store. Then, as the user interact with the app we simultaneously
-          // update the Redux-store and persist the changes in the database.
-          return API.saveTodo(this.input.value)
-            .then((todo) => {
-              this.props.store.dispatch(addTodoAction(todo));
-              this.input.value = '';
-            })
-            .catch(() => alert('There was an error, try again'));
+          this.props.store.dispatch(
+            handleAddTodo(this.input.value, () => (this.input.value = ''))
+          );
         };
 
         removeItem = (todo) => {
@@ -250,13 +269,9 @@
         };
 
         toggleItem = (todo) => {
-          this.props.store.dispatch(toggleTodoAction(todo.id));
-          //Toggling the item from the data base API optimistically
-          return API.saveTodoToggle(todo.id).catch(() => {
-            this.props.store.dispatch(toggleTodoAction(todo.id));
-            alert('An error ocurred, try again');
-          });
+          this.props.store.dispatch(handleToggle(todo.id));
         };
+
         render() {
           return (
             <div>
