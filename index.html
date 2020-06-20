@@ -27,7 +27,8 @@
       const ADD_GOAL = 'ADD_GOAL';
       const REMOVE_GOAL = 'REMOVE_GOAL';
       const RECEIVE_DATA = 'RECEIVE_DATA';
-      //Action creators
+
+      /**********************ACTION CREATORS*****************/
       function addTodoAction(todo) {
         return {
           type: ADD_TODO,
@@ -88,6 +89,28 @@
         };
       }
 
+      function handleDeleteGoal(goal) {
+        return (dispatch) => {
+          dispatch(removeGoalAction(goal.id));
+
+          //Deleting the item from the data base API optimistically
+          return API.deleteGoal(goal.id).catch(() => {
+            dispatch(addGoalAction(goal));
+            alert('An error ocurred, try again');
+          });
+        };
+      }
+
+      function handleAddGoal(name, callback) {
+        return (dispatch) => {
+          return API.saveGoal(name)
+            .then((goal) => {
+              dispatch(addGoalAction(goal));
+              callback();
+            })
+            .catch(() => alert('There was an error. Try again.'));
+        };
+      }
       /*********************MIDDLEWARES***************/
       // Using Redux Middleware with the Currying technique
       function checker(store) {
@@ -257,21 +280,14 @@
       class Goals extends React.Component {
         addItem = (e) => {
           e.preventDefault();
-
-          return API.saveGoal(this.input.value).then((goal) => {
-            this.props.store.dispatch(addGoalAction(goal));
-            this.input.value = '';
-          });
+          this.props.store.dispatch(
+            //Adding a callback to handle "clear input"
+            handleAddGoal(this.input.value, () => (this.input.value = ''))
+          );
         };
 
         removeItem = (goal) => {
-          this.props.store.dispatch(removeGoalAction(goal.id));
-
-          //Deleting the item from the data base API optimistically
-          return API.deleteGoal(goal.id).catch(() => {
-            this.props.store.dispatch(addGoalAction(goal));
-            alert('An error ocurred, try again');
-          });
+          this.props.store.dispatch(handleDeleteGoal(goal));
         };
         render() {
           return (
